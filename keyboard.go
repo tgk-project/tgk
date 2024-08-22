@@ -27,12 +27,12 @@ func NewKeyboard(keyboardJsonData []byte) *Keyboard {
 	// set HID objects
 	for _, hid := range keyboard.Config.HID {
 		switch hid {
-		case "ble":
-			ble := NewBLEHID()
-			keyboard.HID = append(keyboard.HID, ble)
-		case "usb":
-			usb := NewUSBHID()
-			keyboard.HID = append(keyboard.HID, usb)
+		// case "ble":
+		// 	ble := NewBLEHID()
+		// 	keyboard.HID = append(keyboard.HID, ble)
+		// case "usb":
+		// 	usb := NewUSBHID()
+		// 	keyboard.HID = append(keyboard.HID, usb)
 		case "serial":
 			serial := NewSerialHIDMoc()
 			keyboard.HID = append(keyboard.HID, serial)
