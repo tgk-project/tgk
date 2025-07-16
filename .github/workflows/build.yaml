@@ -1,0 +1,23 @@
+name: Build firmware
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build firmware
+        run: |
+          # Add your build commands here
+          # For example:
+          # make build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: firmware
+          path: path/to/artifact
