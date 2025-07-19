@@ -45,6 +45,37 @@ func (s *KeyScanEC) Init(config KeyboardConfig) error {
 		s.nowRelease[i] = make([]bool, config.Matrix.Cols)
 	}
 
+	// 追加設定を動的に読み込む
+	if config.KeyScanExtraConfigs.ADCGain > 0 {
+		s.adcGain = config.KeyScanExtraConfigs.ADCGain
+	}
+
+	// colChannelの設定を読み込む
+	if len(config.KeyScanExtraConfigs.ColChannel) > 0 {
+		s.colChannels = make([]int, len(config.KeyScanExtraConfigs.ColChannel))
+		for i, ch := range config.KeyScanExtraConfigs.ColChannel {
+			// 文字列を整数に変換
+			chInt, err := stringToInt(ch)
+			if err != nil {
+				return err
+			}
+			s.colChannels[i] = chInt
+		}
+	}
+
+	// ピン設定を動的に読み込む
+	if len(config.MatrixPins.Rows) > 0 {
+		// 設定ファイルからピン設定を読み込む
+		s.rowPins = make([]machine.Pin, len(config.MatrixPins.Rows))
+		for i, pinName := range config.MatrixPins.Rows {
+			pin, err := stringToPinWithError(pinName)
+			if err != nil {
+				return err
+			}
+			s.rowPins[i] = pin
+		}
+	}
+
 	// ピンの初期化
 	s.dischargePin.Low()
 	s.dischargePin.Configure(machine.PinConfig{Mode: machine.PinOutput})

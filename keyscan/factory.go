@@ -55,15 +55,54 @@ type Layouts struct {
 	Keymap [][]map[string]interface{} `json:"keymap"`
 }
 
-// NewKeyScanMatrix はキースキャンマトリックスを作成します
+// KeyScanMatrixFactory はキースキャンマトリックスのファクトリー関数の型です
+type KeyScanMatrixFactory func() KeyScanMatrix
+
+// registeredFactories は登録されたファクトリー関数のマップです
+var registeredFactories = map[string]KeyScanMatrixFactory{
+	"mx": func() KeyScanMatrix { return NewMXKeyScan() },
+	"ec": func() KeyScanMatrix { return NewECKeyScan() },
+}
+
+// RegisterKeyScanMatrix は新しいキースキャンマトリックスタイプを登録します
+func RegisterKeyScanMatrix(typeName string, factory KeyScanMatrixFactory) {
+	registeredFactories[typeName] = factory
+}
+
+// ErrUnknownKeyScanType は未知のキースキャンタイプが指定された場合のエラーです
+type ErrUnknownKeyScanType struct {
+	Type string
+}
+
+func (e ErrUnknownKeyScanType) Error() string {
+	return "unknown keyscan type: " + e.Type
+}
+
+// NewKeyScanMatrix はキースキャンタイプに基づいて適切なKeyScanMatrixを作成します
+// 未知のタイプが指定された場合はデフォルト（MX）を使用します
 func NewKeyScanMatrix(keyscanType string) KeyScanMatrix {
-	switch keyscanType {
-	case "mx":
-		return NewMXKeyScan()
-	case "ec":
-		return NewECKeyScan()
-	default:
+	factory, exists := registeredFactories[keyscanType]
+	if !exists {
 		// デフォルトはMX
-		return NewMXKeyScan()
+		factory = func() KeyScanMatrix { return NewMXKeyScan() }
 	}
+
+	return factory()
+}
+
+// NewKeyScanMatrixWithError はキースキャンタイプに基づいて適切なKeyScanMatrixを作成します
+// 未知のタイプが指定された場合はエラーを返します
+func NewKeyScanMatrixWithError(keyscanType string) (KeyScanMatrix, error) {
+	factory, exists := registeredFactories[keyscanType]
+	if !exists {
+		return nil, ErrUnknownKeyScanType{Type: keyscanType}
+	}
+
+	return factory(), nil
+}
+
+// NewTGKKeyScanMatrix はキースキャンタイプに基づいて適切なTGKKeyScanMatrixを作成します
+func NewTGKKeyScanMatrix(keyscanType string) TGKKeyScanMatrix {
+	impl := NewKeyScanMatrix(keyscanType)
+	return NewKeyScanMatrixAdapter(impl)
 }

@@ -7,8 +7,8 @@
 package di
 
 import (
-	"github.com/Diwamoto/tgk"
 	"github.com/google/wire"
+	"github.com/tgk-project/tgk"
 )
 
 // Injectors from wire.go:
@@ -23,7 +23,8 @@ func InitializeTGKManager() tgk.TGKManager {
 	remapService := tgk.NewRemapService()
 	splitService := tgk.NewSplitService()
 	configService := tgk.NewConfigService(configRepository)
-	tgkManager := tgk.NewTGKManager(hidService, keyScanService, layerService, remapService, splitService, configService)
+	loggerService := tgk.NewLoggerService()
+	tgkManager := tgk.NewTGKManager(hidService, keyScanService, layerService, remapService, splitService, configService, loggerService)
 	return tgkManager
 }
 
@@ -33,4 +34,4 @@ func InitializeTGKManager() tgk.TGKManager {
 var repositorySet = wire.NewSet(tgk.NewGPIORepository, tgk.NewKeymapRepository, tgk.NewConfigRepository)
 
 // serviceSet はサービスの依存関係を提供します
-var serviceSet = wire.NewSet(tgk.NewHIDService, tgk.NewKeyScanService, tgk.NewLayerService, tgk.NewRemapService, tgk.NewSplitService, tgk.NewConfigService)
+var serviceSet = wire.NewSet(tgk.NewHIDService, tgk.NewKeyScanService, tgk.NewLayerService, tgk.NewRemapService, tgk.NewSplitService, tgk.NewConfigService, tgk.NewLoggerService)

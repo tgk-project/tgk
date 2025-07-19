@@ -4,8 +4,8 @@
 package di
 
 import (
-	"github.com/Diwamoto/tgk"
 	"github.com/google/wire"
+	"github.com/tgk-project/tgk"
 )
 
 // repositorySet はリポジトリの依存関係を提供します
@@ -23,6 +23,7 @@ var serviceSet = wire.NewSet(
 	tgk.NewRemapService,
 	tgk.NewSplitService,
 	tgk.NewConfigService,
+	tgk.NewLoggerService,
 )
 
 // InitializeTGKManager はTGKマネージャーとその依存関係を初期化します

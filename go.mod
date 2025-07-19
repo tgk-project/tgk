@@ -1,4 +1,4 @@
-module github.com/Diwamoto/tgk
+module github.com/tgk-project/tgk
 
 go 1.24.2
 

@@ -17,6 +17,7 @@ type KeyboardConfig struct {
 	Split               bool                `json:"split"`
 	MatrixPins          MatrixPins          `json:"matrix_pins"`
 	Layouts             Layouts             `json:"layouts"`
+	LogLevel            string              `json:"log_level,omitempty"`
 }
 
 // Matrix はマトリックスの設定を表します

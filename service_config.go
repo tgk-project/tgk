@@ -16,6 +16,7 @@ type ConfigService interface {
 type configService struct {
 	configRepository ConfigRepository
 	loadConfigName   string
+	logger           LoggerService
 }
 
 // NewConfigService は設定サービスを作成します

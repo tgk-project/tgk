@@ -1,6 +1,6 @@
 package tgk
 
-import "github.com/Diwamoto/tgk/keyscan"
+import "github.com/tgk-project/tgk/keyscan"
 
 // KeyScanService はキースキャンサービスのインターフェースです
 type KeyScanService interface {
@@ -13,7 +13,7 @@ type KeyScanService interface {
 }
 
 type keyScanService struct {
-	keyScan    KeyScanMatrix
+	keyScan    keyscan.TGKKeyScanMatrix
 	nowPushing [][]bool
 	nowRelease [][]bool
 }
@@ -24,38 +24,11 @@ func NewKeyScanService() KeyScanService {
 
 func (s *keyScanService) Init(config KeyboardConfig) error {
 	// configからkeyscanタイプを取得して適切なKeyScanMatrixを作成
-	s.keyScan = keyscan.NewKeyScanMatrix(config.KeyScan)
+	// 新しいアダプターを使用して、tgk.KeyScanMatrixを直接取得
+	s.keyScan = keyscan.NewTGKKeyScanMatrix(config.KeyScan)
 
-	// tgk.KeyboardConfigをkeyscan.KeyboardConfigに変換
-	keyscanConfig := keyscan.KeyboardConfig{
-		Name:       config.Name,
-		Maintainer: config.Maintainer,
-		VendorID:   config.VendorID,
-		ProductID:  config.ProductID,
-		KeyScan:    config.KeyScan,
-		Matrix: keyscan.Matrix{
-			Rows: config.Matrix.Rows,
-			Cols: config.Matrix.Cols,
-		},
-		KeyScanExtraConfigs: keyscan.KeyScanExtraConfigs{
-			DiodeDirection:   config.KeyScanExtraConfigs.DiodeDirection,
-			PushThreshold:    config.KeyScanExtraConfigs.PushThreshold,
-			ReleaseThreshold: config.KeyScanExtraConfigs.ReleaseThreshold,
-			ADCGain:          config.KeyScanExtraConfigs.ADCGain,
-			ColChannel:       config.KeyScanExtraConfigs.ColChannel,
-		},
-		HID:   config.HID,
-		Split: config.Split,
-		MatrixPins: keyscan.MatrixPins{
-			Rows: config.MatrixPins.Rows,
-			Cols: config.MatrixPins.Cols,
-		},
-		Layouts: keyscan.Layouts{
-			Keymap: config.Layouts.Keymap,
-		},
-	}
-
-	return s.keyScan.Init(keyscanConfig)
+	// 直接tgk.KeyboardConfigを渡せるようになった
+	return s.keyScan.Init(config)
 }
 
 func (s *keyScanService) Scan() bool {
