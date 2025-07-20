@@ -1,23 +1,60 @@
-name: Build firmware
+name: TinyGo Keyboard Build Test
 
 on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
-  test:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Build firmware
-        run: |
-          # Add your build commands here
-          # For example:
-          # make build
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - name: Setup Go
+        uses: actions/setup-go@v4
         with:
-          name: firmware
-          path: path/to/artifact
+          go-version: "1.24.2"
+
+      - name: Install TinyGo
+        run: |
+          wget https://github.com/tinygo-org/tinygo/releases/download/v0.33.0/tinygo_0.33.0_amd64.deb
+          sudo dpkg -i tinygo_0.33.0_amd64.deb
+
+      - name: Clone user keyboard template
+        run: |
+          git clone https://github.com/tgk-project/user-keyboard-template.git template
+
+      - name: Copy TGK framework to template
+        run: |
+          cp -r ./* template/ || true
+          cp -r ./.github template/ || true
+
+      - name: Generate Wire dependencies
+        working-directory: template
+        run: |
+          go install github.com/google/wire/cmd/wire@latest
+          cd di && wire
+
+      - name: Build firmware with TinyGo
+        working-directory: template
+        run: |
+          mkdir -p build
+          tinygo build -target=feather-nrf52840 --size short -o build/firmware.uf2 .
+
+      - name: Verify build output
+        working-directory: template
+        run: |
+          ls -la build/
+          file build/firmware.uf2
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyboard-firmware
+          path: template/build/firmware.uf2
+          retention-days: 7
