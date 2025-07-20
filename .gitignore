@@ -23,3 +23,6 @@ go.work.sum
 
 # example 
 example/*
+
+# macOS system files
+.DS_Store
