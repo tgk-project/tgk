@@ -1,3 +1,3 @@
 module github.com/tgk-project/tgk
 
-go 1.27.0
+go 1.25.0
