@@ -63,11 +63,8 @@ func New(layers [][]Binding) (Keymap, error) {
 			return Keymap{}, ErrUnevenLayer
 		}
 		for _, binding := range layer {
-			if !knownBehavior(binding.Behavior) {
-				return Keymap{}, ErrUnknownBehavior
-			}
-			if !validParameter(binding) {
-				return Keymap{}, ErrInvalidParameter
+			if err := ValidateBinding(binding); err != nil {
+				return Keymap{}, err
 			}
 			if isLayerBehavior(binding.Behavior) && binding.Param1 >= uint32(len(layers)) {
 				return Keymap{}, ErrInvalidLayerIndex
@@ -81,6 +78,20 @@ func New(layers [][]Binding) (Keymap, error) {
 		copy(copyLayers[i], layer)
 	}
 	return Keymap{layers: copyLayers, positions: uint16(positions)}, nil
+}
+
+// ValidateBinding checks whether a binding can be represented by the core.
+// Layer-target bounds depend on a complete Keymap and are checked by New.
+// Keeping the per-binding validation public lets persistence reject malformed
+// data before it reaches the Primary-owned keymap engine.
+func ValidateBinding(binding Binding) error {
+	if !knownBehavior(binding.Behavior) {
+		return ErrUnknownBehavior
+	}
+	if !validParameter(binding) {
+		return ErrInvalidParameter
+	}
+	return nil
 }
 
 // LayerCount returns the number of available layers.

@@ -9,14 +9,19 @@ import (
 	"machine"
 
 	"github.com/tgk-project/tgk/keyboard/event"
+	"github.com/tgk-project/tgk/keyboards/reference"
 	"github.com/tgk-project/tgk/platform/xiao_ble"
 )
 
 func main() {
+	factory, err := reference.FactoryConfig()
+	if err != nil {
+		return
+	}
 	scanner, err := xiaoble.NewMatrix(xiaoble.MatrixConfig{
 		Rows:      []machine.Pin{machine.D0},
 		Columns:   []machine.Pin{machine.D1},
-		Positions: []uint16{0},
+		Positions: factory.Positions(),
 		Source:    0,
 		ActiveLow: true,
 	})

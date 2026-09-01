@@ -14,6 +14,7 @@ var (
 	ErrPressedCapacity        = errors.New("pressed position capacity exceeded")
 	ErrQueueOverflow          = errors.New("event queue overflow; keyboard state released")
 	ErrInvalidEventBatch      = errors.New("event source returned more events than the caller buffer")
+	ErrIncompatibleKeymap     = errors.New("replacement keymap has incompatible dimensions")
 )
 
 // Options bounds all engine-owned memory. MaxPressed must cover the maximum
@@ -156,9 +157,51 @@ func (e *Engine) Reset() error {
 	return e.resetState()
 }
 
+// ReleaseSource safely releases every pressed position from one physical
+// producer while preserving state owned by other scanner or split sources.
+// It must be called by the Primary event-loop owner, not a transport callback.
+func (e *Engine) ReleaseSource(source event.Source) error {
+	e.queue.dropSource(source)
+
+	changed := false
+	for index := 0; index < e.pressedCount; {
+		if e.pressed[index].physical.source != source {
+			index++
+			continue
+		}
+		binding := e.pressed[index].binding
+		e.pressedCount--
+		e.pressed[index] = e.pressed[e.pressedCount]
+		e.pressed[e.pressedCount] = pressedPosition{}
+		if e.releaseBinding(binding) {
+			changed = true
+		}
+	}
+	if !changed {
+		return nil
+	}
+	return e.sendReport()
+}
+
 // Report returns a value copy of the current Primary-owned Host state.
 func (e *Engine) Report() report.KeyboardReport {
 	return e.currentReport()
+}
+
+// ReplaceKeymap swaps the Primary-owned keymap from the event-loop owner.
+// Pressed bindings are resolved at press time, so state is first released to
+// prevent an old press from being released through a newly assigned binding.
+// The physical position and layer dimensions stay fixed for a running
+// keyboard definition.
+func (e *Engine) ReplaceKeymap(value keymap.Keymap) error {
+	if value.PositionCount() != e.keymap.PositionCount() || value.LayerCount() != e.keymap.LayerCount() {
+		return ErrIncompatibleKeymap
+	}
+	if err := e.resetState(); err != nil {
+		return err
+	}
+	e.keymap = value
+	return nil
 }
 
 // QueueStats reports callback-side input loss for observability.
@@ -250,23 +293,30 @@ func (e *Engine) applyPress(binding keymap.Binding) error {
 }
 
 func (e *Engine) applyRelease(binding keymap.Binding) error {
+	if !e.releaseBinding(binding) {
+		return nil
+	}
+	return e.sendReport()
+}
+
+func (e *Engine) releaseBinding(binding keymap.Binding) bool {
 	switch binding.Behavior {
 	case keymap.BehaviorKey:
 		e.removeKey(uint8(binding.Param1))
-		return e.sendReport()
+		return true
 	case keymap.BehaviorModifier:
 		e.removeModifiers(uint8(binding.Param1))
-		return e.sendReport()
+		return true
 	case keymap.BehaviorConsumer:
 		e.removeConsumer(uint16(binding.Param1))
-		return e.sendReport()
+		return true
 	case keymap.BehaviorMomentaryLayer:
 		layer := uint8(binding.Param1)
 		if e.momentary[layer] > 0 {
 			e.momentary[layer]--
 		}
 	}
-	return nil
+	return false
 }
 
 func (e *Engine) addKey(usage uint8) {

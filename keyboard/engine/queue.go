@@ -73,6 +73,29 @@ func (q *Queue) recoverOverflow() bool {
 	return true
 }
 
+// dropSource removes queued events from one physical producer. It is used by
+// the owning event loop before releasing a disconnected split source, so stale
+// presses queued before a disconnect cannot be applied afterwards.
+func (q *Queue) dropSource(source event.Source) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	kept := 0
+	for offset := 0; offset < q.count; offset++ {
+		index := (q.head + offset) % len(q.events)
+		value := q.events[index]
+		if value.Source == source {
+			continue
+		}
+		q.events[kept] = value
+		kept++
+	}
+	clear(q.events[kept:])
+	q.head = 0
+	q.tail = kept % len(q.events)
+	q.count = kept
+}
+
 // QueueStats exposes loss detection without binding the core to a logger.
 type QueueStats struct {
 	OverflowCount uint32

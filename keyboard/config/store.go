@@ -21,8 +21,8 @@ type Snapshot struct {
 	Bindings []keymap.Binding
 }
 
-// ConfigStore is the persistence boundary. Concrete flash and crash-recovery
-// policies belong to Issue #10.
+// ConfigStore is the persistence boundary. Reset affects only User Config;
+// callers must keep bond removal as a separate operation.
 type ConfigStore interface {
 	Load() (Snapshot, error)
 	Save(Snapshot) error

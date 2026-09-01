@@ -233,6 +233,38 @@ func TestSourceKeepsSamePositionIndependent(t *testing.T) {
 	}
 }
 
+func TestReleaseSourcePreservesOtherSourceState(t *testing.T) {
+	host := &fakeHost{ready: true}
+	value := newEngine(t, host)
+
+	runEvents(t, value,
+		event.KeyEvent{Source: 1, Position: 1, Pressed: true},
+		event.KeyEvent{Source: 2, Position: 0, Pressed: true},
+	)
+	if err := value.ReleaseSource(2); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := value.Report(), (report.KeyboardReport{Keys: [6]uint8{keyA}}); got != want {
+		t.Fatalf("Report() = %#v, want %#v", got, want)
+	}
+	if host.releases != 0 {
+		t.Fatalf("ReleaseAll calls = %d, want 0", host.releases)
+	}
+
+	if !value.Enqueue(event.KeyEvent{Source: 2, Position: 1, Pressed: true}) {
+		t.Fatal("Enqueue() unexpectedly returned false")
+	}
+	if err := value.ReleaseSource(2); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := value.Run(0); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := value.Report(), (report.KeyboardReport{Keys: [6]uint8{keyA}}); got != want {
+		t.Fatalf("queued disconnected-source event changed report: %#v, want %#v", got, want)
+	}
+}
+
 func TestSixKeyReportRecoversAfterRollover(t *testing.T) {
 	layer := make([]keymap.Binding, 7)
 	for i := range layer {
