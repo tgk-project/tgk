@@ -1,0 +1,149 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# TGKプロジェクト解析ドキュメント
+
+## プロジェクト概要
+
+TGKプロジェクトは、TinyGoを使用したキーボード制御のためのフレームワークです。このプロジェクトは、マイコンを使用してキーボードを制御するための機能を提供しています。
+
+## アーキテクチャ
+
+プロジェクトは、クリーンアーキテクチャに基づいた構造を持っています：
+
+1. **リポジトリ層**：データアクセスを担当
+   - `repository_config.go`: 設定ファイルの読み込み
+   - `repository_gpio.go`: GPIOアクセス
+   - `repository_keymap.go`: キーマップ管理
+
+2. **サービス層**：ビジネスロジックを担当
+   - `service_config.go`: 設定サービス
+   - `service_hid.go`: HID通信
+   - `service_keyscan.go`: キースキャン
+   - `service_layer.go`: レイヤー管理
+   - `service_remap.go`: キーリマップ
+   - `service_split.go`: スプリットキーボード管理
+
+3. **マネージャー**：全体の制御を担当
+   - `tgk_manager.go`: TGKマネージャー
+
+4. **依存性注入**：コンポーネント間の依存関係を管理
+   - `di/wire.go`: 依存性注入の設定
+   - `di/wire_gen.go`: 生成された依存性注入コード
+
+## 主要なデータ構造
+
+`types.go`には、以下のような主要なデータ構造が定義されています：
+
+1. **KeyboardConfig**: キーボードの全体設定
+   - 名前、メンテナー、ベンダーID、製品ID
+   - キースキャン方式
+   - マトリックス設定
+   - HID設定
+   - スプリット設定
+   - マトリックスピン設定
+   - レイアウト設定
+
+2. **Matrix**: マトリックスの行数と列数
+3. **KeyScanExtraConfigs**: キースキャンの追加設定
+4. **MatrixPins**: マトリックスのピン設定
+5. **Layouts**: レイアウト設定
+6. **HIDInterface**: HIDのインターフェース
+
+## 設定ファイル
+
+`debugger/keyboard.json`は、キーボードの設定ファイルで、以下の情報が含まれています：
+
+```json
+{
+    "name": "sage60",
+    "maintainer": "Diwamoto",
+    "vendorId": "0xfeed",
+    "productId": "0x6060",
+    "keyscan": "mx",
+    "matrix": { "rows": 10, "cols": 6 },
+    "keyscan_extra_configs": {
+        "diode_direction": "col2row",
+        "push_threshold": 1000,
+        "release_threshold": 400,
+        "adc_gain": 12,
+        "col_channel": ["4", "6", "7", "5", "1", "0"]
+    },
+    "hid": [
+        "ble",
+        "serial"
+    ],
+    "split": true,
+    "matrix_pins": {
+        "rows": ["D25", "D24", "D1", "D0", "D2"],
+        "cols": ["D26", "D19", "D18", "D17", "D16", "D14"]
+    },
+    "layouts": {
+        "keymap": [
+            // キーマップ情報（省略）
+        ]
+    }
+}
+設定読み込みの流れ
+TGKManagerが初期化される
+SetLoadConfigNameで設定ファイル名が設定される
+Initメソッドで各サービスが初期化される
+ConfigServiceのLoadメソッドが呼び出される
+ConfigRepositoryのLoadメソッドが呼び出され、JSONファイルが読み込まれる
+JSONデータがKeyboardConfig構造体にデコードされる
+GetConfigメソッドで設定が取得できるようになる
+デバッガー
+debugger/main.goは、TinyGoのキーボードプロジェクトのデバッガーのメインエントリーポイントです。Arduinoのようなセットアップとループの構造を持っています：
+
+func main() {
+    setup()
+    // for {
+    //     loop()
+    // }
+}
+
+func setup() {
+    tgkManager = di.InitializeTGKManager()
+    tgkManager.SetLoadConfigName("keyboard.json")
+
+    if err := tgkManager.Init(); err != nil {
+        panic(err)
+    }
+}
+
+// func loop() {
+//     if err := tgkManager.Task(); err != nil {
+//         panic(err)
+//     }
+// }
+シミュレーション方法
+マイコンの準備ができていない場合、以下の方法でシミュレーションを行うことができます：
+
+TinyGoのエミュレータを使用する
+標準のGoコンパイラを使用して、デスクトップ環境で実行する
+モックオブジェクトを作成して、ハードウェア依存部分を置き換える
+特にrepository_config.goのLoad()関数のテストを行う場合、JSONファイルの読み込みとデコードの部分はハードウェアに依存しないため、標準のGoコンパイラを使用してテストすることができます。
+
+TinyGoのベストプラクティス
+メモリ使用量を最小限に抑える
+
+ポインタよりも値型を優先する
+不必要なメモリ割り当てを避ける
+静的メモリ割り当てを使用する
+パフォーマンスを最適化する
+
+再帰を避ける
+インターフェースの使用を最小限に抑える
+反復処理を使用する
+コンパイルサイズを最小化する
+
+不要なライブラリを避ける
+リフレクションを使用しない
+コードの重複を避ける
+ハードウェア抽象化
+
+ハードウェア依存のコードをインターフェースの背後に隠す
+モックオブジェクトを使用してテストを容易にする

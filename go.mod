@@ -1,14 +1,19 @@
 module github.com/tgk-project/tgk
 
-go 1.22.3
+go 1.25.0
 
-require tinygo.org/x/bluetooth v0.9.0
+require tinygo.org/x/bluetooth v0.15.1-0.20260825095354-81dadabd0578
 
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/saltosystems/winrt-go v0.0.0-20240320113951-a2e4fc03f5f4 // indirect
+	github.com/saltosystems/winrt-go v0.0.0-20260317170058-9c2fec580d96 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/soypat/cyw43439 v0.1.0 // indirect
+	github.com/soypat/lneto v0.1.0 // indirect
+	github.com/soypat/seqs v0.0.0-20250124201400-0d65bc7c1710 // indirect
 	github.com/tinygo-org/cbgo v0.0.4 // indirect
+	github.com/tinygo-org/pio v0.3.0 // indirect
+	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d // indirect
 	golang.org/x/sys v0.11.0 // indirect
 )
